@@ -111,6 +111,7 @@ name属性を追加して、フォーム送信時の識別子を設定する。
 rowsとcols属性を使用して、`<textarea>`のサイズを指定する。
 
 **■サンプルコード**
+```html
 <form action="sample_url">
   <div>
     <label for="name">名前：</label>
@@ -130,34 +131,29 @@ rowsとcols属性を使用して、`<textarea>`のサイズを指定する。
   <div>
     <p>性別：</p>
     <label>
-    男<input type="radio" name="sex">
-  </label>
-
-  <label>
-    女<input type="radio" name="sex">
+      男<input type="radio" name="sex">
+    </label>
+    <label>
+      女<input type="radio" name="sex">
     </label>
   </div>
 
   <div>
     <p>話せる言葉(複数選択可)：</p>
     <label>
-    <input type="checkbox" name="language" value="japanese">日本語
-  </label>
-
-  <label>
-    <input type="checkbox" name="language" value="english">英語
-  </label>
-
-  <label>
-    <input type="checkbox" name="language" value="chinese">中国語
-  </label>
-
-  <label>
-    <input type="checkbox" name="language" value="french">フランス語
-  </label>
-
-  <label>
-    <input type="checkbox" name="language" value="italian">イタリア語
+      <input type="checkbox" name="language" value="japanese">日本語
+    </label>
+    <label>
+      <input type="checkbox" name="language" value="english">英語
+    </label>
+    <label>
+      <input type="checkbox" name="language" value="chinese">中国語
+    </label>
+    <label>
+      <input type="checkbox" name="language" value="french">フランス語
+    </label>
+    <label>
+      <input type="checkbox" name="language" value="italian">イタリア語
     </label>
   </div>
 
@@ -171,4 +167,6 @@ rowsとcols属性を使用して、`<textarea>`のサイズを指定する。
     <input type="submit">
   </div>
 </form>
+```
+
 
