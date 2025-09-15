@@ -1,5 +1,19 @@
 # HTML 基本文法
 
+**HTMLの基本構文**
+```
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Webページのタイトル</title>
+    # Webページの情報を記載します
+  </head>
+  <body>
+    # ブラウザに表示するコンテンツを記載します
+  </body>
+</html>
+```
+
 **SEOとは**
 SEO（Search Engine Optimization）検索エンジン最適化の略。Googleなどの検索エンジンでウェブサイトが検索結果の上位に表示されるように、サイトの構造やコンテンツを調整する活動全般を指す。
 

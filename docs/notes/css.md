@@ -520,3 +520,338 @@ span{
 }
 ```
 ※通常、spanタグをブロック要素に変更することはない。その場合はpタグを使用する。
+
+**FlexBox**
+「FlexBox」は、要素を横並びや縦並びに綺麗に整列させる際に便利な、CSSのレイアウト手法の一つ。※FlexBox自体はプロパティではない。
+
+FlexBoxを使用する際には、まず親要素の`display`プロパティを`flex`に設定する。そうすることで、「この親要素にはFlexBoxを適用する」と宣言することができ、その子要素を綺麗に整列させることができるようになる。
+
+**FlexBoxの基本的な使い方**
+```
+index.html
+<div class="parent">
+  <p>子要素</p>
+  <p>子要素</p>
+  <p>子要素</p>
+</div>
+```
+```
+style.css
+.parent {
+  display: flex;
+  justify-content: space-between; /* 子要素を均等に横配置する設定 */
+}
+```
+
+**FlexBoxの便利なプロパティ**
+| プロパティ | 役割 | 設定値 |
+| :-- | :-- | :-- |
+| justify-content | 子要素の水平方向の配置を設定する | `center`,`start`, `space-between`, `space-around`など
+| align-items | 子要素の垂直方向の配置を設定する | `center`, `start`, `end`など |
+| flex-direction | 子要素の並び方を設定する | `row`, `row-reverse` , `column`, `column-reverse`など |
+| order | 子要素の並び順を設定する | `1`, `2`, `3`など |
+| align-content | 複数行になったときの行揃え | `stretch`, `flex-start`, `flex-end`, `center`, `space-between`, `space-around` |
+| flex-wrap | 折り返しの有無 | `nowrap`, `wrap`, `wrap-reverse`など |
+
+---
+**justify-contentプロパティの設定値**
+center：子要素を中央に寄せる
+start：子要素を先頭に寄せる
+space-between：子要素を均等に配置する※最初の子要素は先頭、最後の子要素は末尾に寄せられる
+space-around：子要素を均等に配置する
+
+---
+**align-itemsプロパティ**
+center：子要素を中央に寄せる
+start：子要素を先頭に寄せる
+end：子要素を末尾に寄せる
+
+---
+**flex-directionプロパティ**
+row：子要素を横方向に配置する
+row-reverse：子要素を逆順で横方向に配置する
+column：子要素を縦方向に配置する
+
+---
+**z-index**
+`z-index`プロパティを使用すると、要素の重なり順を指定することができる。
+`position`プロパティを`absolute`や`fixed`に設定している場合に使用することが多く、設定値が大きいほうが上に表示される。
+例えば、Webサイトによくある機能として、画面がスクロールしてもヘッダーが他のコンテンツに隠れることなく表示されるものがあるが、あの機能も`z-index`プロパティで実現可能。
+
+【基本構文】
+```
+セレクタ {
+  z-index: 数字で指定; /* 複数のセレクタに設定した場合、数字の大きい方が上に表示される */
+}
+```
+`z-index`プロパティは、その値に数字を設定する。複数の要素に`z-index`プロパティを設定した場合、数字が大きい要素ほど重なりの上に表示される。つまり、「`1`」と「`10`」を指定した場合は「`10`」を指定した要素が、重なりの上に表示される。
+なお、設定値が同じ場合は、コード上でより後ろに記載されている要素が上に表示される。また数字の上限は実質なく、マイナス値も指定できる。値を設定しない場合（=z-indexプロパティを使わない場合）は`0`とみなされる。
+
+**疑似クラス**
+「疑似クラス」とは、HTML要素に対して、その要素が特定の状態である場合にスタイルを適用するための技術。「指定した要素にカーソルを当てた場合」や「ボタンをクリックした場合」のスタイルの変化を定義することができるようになる。
+
+【基本構文】
+```
+セレクタ:擬似クラス {
+  プロパティ: 設定値;
+}
+```
+
+**疑似クラスの設定値と役割**
+hover：要素にカーソルが当たった時のスタイルを定義する。
+disabled：要素が無効状態（入力不可 など）の時のスタイルを定義する。
+first-child：最初の子要素のスタイルを定義する。
+nth-child(n)：指定した順番の子要素のスタイルを定義する。
+
+**疑似クラスの基本的な使い方**
+**hover**
+`hover`を設定すると、要素にカーソルが当たった時のスタイルを設定することができる。
+
+```
+index.html
+<p class="font-color">カーソルを当てると文字の色が変わります。</p>
+<p class="font-style">カーソルを当てると文字の形式が変わります。</p>
+```
+```
+style.css
+.font-color:hover {
+  color: red;
+}
+
+.font-style:hover {
+  font-style: italic;
+}
+```
+
+---
+**disabled**
+`disabled`を設定すると、要素が無効状態の時のスタイルを設定することができる。「無効状態」とは、例えば、必須項目が入力されておらず「クリック不可」となっているボタンがその状態。
+```
+index.html
+<button type="submit">クリック可能</button>
+<button type="submit" disabled>クリック不可</button>
+```
+```
+style.css
+button:disabled {
+  background-color: rgba(239, 239, 239, 0.3);
+  border-color: rgba(118, 118, 118, 0.3);
+  color: rgba(16, 16, 16, 0.3);
+}
+```
+---
+**first-child**
+`first-child`を設定すると、兄弟要素のグループの中で、最初の要素にのみスタイルを適用することができる。
+この`first-child`は`<ul>`/`<li>`タグと併用されることが多い。これとは逆に最後の要素にのみスタイルを適用する「`last-child`」もある。
+
+---
+**nth-child(n)**
+`first-child`は最初の要素にスタイルを適用したが、`nth-child(n)`を設定すると、引数の`n`設定した順番の要素にのみスタイルを適用することができる。
+
+
+---
+**疑似要素**
+「疑似要素」はHTML要素の一部の要素を指し、このセレクタに対して疑似要素を指定することで、その一部にスタイルを適用することができる。
+要は「要素の最初の一文字」や「要素の最初の1行」のスタイルを設定することができるようになる。
+使い方はセレクタに対して`::`（コロン）を付けることで、そのセレクタの疑似要素を定義することができる。
+
+【基本構文】
+```
+セレクタ::擬似要素 {
+  プロパティ: 設定値;
+}
+```
+
+**疑似要素の設定値と役割**
+first-letter：要素に最初の1文字のスタイルを定義する。
+first-line：要素が最初の1行のスタイルを定義する。
+before：設定した要素の前にコンテンツを挿入する。
+after：設定した要素の後ろにコンテンツを挿入する。
+
+---
+**first-letter**
+`first-letter`を設定すると、要素の最初の1文字のスタイルを設定することができる。
+
+```
+index.html
+<p>最初の行だけ太字・赤色にしています。</p>
+```
+```
+style.css
+p::first-letter {
+  color: red;
+  font-weight: bold;
+}
+```
+`first-letter`を使用することで、最初の1文字だけ異なるスタイルを適用することが可能となる。
+注意点として、この`first-letter`はインライン要素には適用できないということ。そのため、`<a>`タグなどのインライン要素に適用したい場合には、`display`プロパティを使って、ブロック要素やインラインブロック要素に変更するようにする。
+
+---
+**first-line**
+`first-line`を設定すると、要素の最初の1行のスタイルを設定することができる。
+```
+index.html
+<p>
+  最初の行だけ太字・赤色にしています。<br>
+  次の行は通常のスタイルです。
+</p>
+```
+```
+style.css
+p::first-line {
+  color: red;
+  font-weight: bold;
+}
+```
+`first-line`を使用することで、最初の1行だけ異なるスタイルを適用することが可能となる。なお、`first-letter`同様、この`first-line`もインライン要素には適用できないので注意。
+
+---
+**before/after**
+`before`/`after`を設定すると、それぞれ要素の前/後に別の要素を追加し、なおかつそのスタイルを設定することができる。
+
+```
+index.html
+<p class="before-text">beforeでテキストを追加しています。</p>
+<p class="after-text">afterでテキストを追加しています。</p>
+```
+```
+style.css
+.before-text::before {
+  color: red;
+  font-weight: bold;
+  content: "[Beforeで挿入!]";
+}
+
+.after-text::after {
+  color: red;
+  font-weight: bold;
+  content: "[Afterで挿入!]";
+}
+```
+**ブラウザでの表示結果（before/after）**
+```
+[Beforeで挿入!]beforeでテキストを追加しています。
+
+afterでテキストを追加しています。[Afterで挿入!]
+```
+`before`/`after`を使用すると、設定した要素の前/後ろに別の要素を追加することができる。
+なお、`before`/`after`の場合、新たに`content`というプロパティを追加する必要があり、ここに追加したいコンテンツを記述することになる。
+この`content`プロパティに対して画像のパスを指定することによって、疑似要素に画像を設定することも可能。
+**画像を設定する方法**
+```
+セレクタ::before {
+  content: url("画像のパス");
+}
+```
+
+---
+**メディアクエリ**
+メディアクエリは、CSS（カスケーディングスタイルシート）の一部であり、ウェブページのコンテンツが表示されるデバイスの種類や特性に基づいて、異なるスタイルルールを適用することを可能にする。
+
+**基本的な使い方**
+メディアクエリを使う際はあらかじめhtmlに`<meta name="viewport" content="width=device-width, initial-scale=1">`を記載する。このタグは、ウェブページがモバイルデバイス上でどのように表示されるかをブラウザに指示する。特にレスポンシブデザインを実装する際には、このタグが必須となる。
+```
+index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ページのタイトル</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- その他のメタタグやCSSリンクなど -->
+</head>
+<body>
+  <!-- ページのコンテンツ -->
+</body>
+</html>
+```
+```
+style.css
+@media only screen and (max-width: 600px) {
+  /* 600px以下の画面幅のデバイス向けのスタイル */
+}
+```
+この例では、画面の幅が600ピクセル以下のデバイスに対して特定のスタイルルールを適用する。このようにして、小さい画面での閲覧を最適化できる。
+
+---
+**サンプル例1：画面幅に基づくメディアクエリ**
+**小さい画面（例：スマートフォン）用**
+```
+@media only screen and (max-width: 600px) {
+  body {
+    background-color:lightblue;
+  }
+  .container {
+    padding: 10px;
+  }
+}
+```
+**中くらいの画面（例：タブレット）用：**
+```
+@media only screen and (min-width: 601px) and (max-width: 1024px) {
+  body {
+    background-color: lightgreen;
+  }
+  .container {
+    padding: 20px;
+  }
+}
+```
+
+**大きい画面（例：デスクトップ）用：**
+```
+@media only screen and (min-width: 1025px) {
+  body {
+    background-color: lightyellow;
+  }
+  .container {
+    padding: 30px;
+  }
+}
+```
+
+---
+**サンプル例2：フォントサイズとレイアウトの調整**
+```
+style.css
+body {
+  font-size: 16px;
+  line-height: 1.6px;
+}
+
+/* 768px以下の画面サイズでフォントサイズを小さくし、パディングを調整 */
+@media only screen and (max-width: 768px) {
+  body {
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+```
+
+---
+**サンプル例3：画像の表示非表示**
+```
+style.css
+.desktop-image {
+  display: block;
+}
+
+.mobile-image {
+  display: none;
+}
+
+/* 768px以下でデスクトップ用画像を非表示にし、モバイル用画像を表示 */
+@media only screen and (max-width: 768px) {
+  .desktop-image {
+    display: none;
+  }
+  .mobile-image {
+    display: block;
+  }
+}
+```
+
+---
+**レスポンシブデザインの確認の仕方**
+メディアクエリを実装したら実際に意図した動きになっているか確認する必要がある。確認方法は以下の通り。
+1：確認したいページで右クリックを押して「検証」ボタンをクリック
+2：toggle device toolbarをクリックして確認したいデバイスを選択
