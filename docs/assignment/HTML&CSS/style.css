@@ -1,0 +1,59 @@
+body{
+    margin: 0;
+    overflow-x: hidden;
+}
+
+.topImages {
+    position: relative;
+    overflow: hidden;
+    min-height: 520px;
+    padding: 48px 24px 175px;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    align-items: center;
+    gap: 24px;
+}
+
+.topImageChild {
+    display: inline-block;
+}
+
+/*左上の三角形*/
+.TriangleLeft {
+    position: absolute;
+    inset: 0;
+    width: min(30vw, 520px);
+    aspect-ratio: 1.1/1;
+    translate: -5% 0%;
+    z-index: 0;
+}
+
+/*楕円形のスタイル*/
+.oval {
+    position: absolute;
+    inset: 0;
+    width: min(46vw, 527px);
+    aspect-ratio: 1/1;
+    translate: -5% 30%;
+    z-index: 0;
+}
+
+/*人の画像のスタイル*/
+.human {
+    position: absolute;
+    align-self: start; /*上端*/
+    justify-self: end; /*右端*/
+    width: min(90vw, 775px);
+    aspect-ratio: 1.2/1;
+    z-index: 1;
+}
+
+/*右下三角のスタイル*/
+.TriangleRight {
+    position: absolute;
+    align-self: end; /*下端*/
+    justify-self: end; /*右端*/
+    width: min(35vw, 500px);
+    aspect-ratio: 1/1;
+    z-index: 0;
+}
