@@ -197,7 +197,7 @@ button：通常のボタンが作成され、クリックしても特に何も�
 **`<button>`タグのその他の属性**
 1. disabled属性
    disabled属性を設定すると、ユーザがそのボタンをクリックできなくなる。入力必須の項目が入力されていない場合に設定することが多い。
-   使用例)`<button type="submit" disabled>クリック不可</button>`
+   使用例：`<button type="submit" disabled>クリック不可</button>`
 
 2. name/value属性
    name属性にキー、value属性に値を設定することで設定値を送信することが可能になる。
