@@ -1,173 +1,328 @@
-*{box-sizing:border-box}
+/*--------------------------------
+  ベーススタイル
+--------------------------------*/
+* { box-sizing: border-box; }
 
-body{
-    margin:0;
-    font-family: "游ゴシック", YuGothic, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
-}
-
-.site-header{
-    background:#fff;
-    height: 70px;
-}
-.site-headerInner{
-    display:flex;
-    align-items:center;
-    gap:24px;
-    padding:14px clamp(16px,4vw,40px);
+body {
+  margin: 0;
+  font-family: "游ゴシック", YuGothic, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro",
+               "メイリオ", Meiryo, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
 }
 
-.logo img{height:20px;display:block}
-
-.nav{
-    margin-left:auto;
-    display:flex;
-    align-items:center;
-    gap:24px;
+/*--------------------------------
+共通部
+--------------------------------*/
+.cta:hover{
+  opacity:.8
 }
 
-.navList{
-    display:flex;
-    gap:45px;
-    list-style:none;
-    margin:0;
-    padding:0;
+
+/*--------------------------------
+  ヘッダー
+--------------------------------*/
+.site-header {
+  background: #fff;
+  height: 70px;
 }
-.navList a{
-    text-decoration:none;
-    color:#222;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    font-weight:700;
-}
-.navList a .en{
-    font-size:12px;
-    letter-spacing:.08em;
-    font-family: "Lato", sans-serif;
-}
-.navList a .ja{
-    font-size:10px;
-    color:#666;
-    margin-top:2px;
+.site-headerInner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px clamp(16px, 4vw, 40px);
 }
 
-.navBtn-cta{
-    display:inline-block;
-    padding:10px 30px;
-    border-radius:999px;
-    background:#f7931a;
-    color:#fff;
-    text-decoration:none;
-    font-weight:700;
-    white-space:nowrap;
-    font-size: 12px;
+/* ロゴ */
+.logo {
+  height: 20px;
+  display: block;
 }
 
-.cta:hover{opacity:.8}
+/* ナビゲーション（PC用） */
+.nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.navList {
+  display: flex;
+  gap: 45px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.navList a {
+  text-decoration: none;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: 700;
+}
+.navList a .en {
+  font-size: 12px;
+  letter-spacing: .08em;
+  font-family: "Lato", sans-serif;
+}
+.navList a .ja {
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+}
 
+/* CTAボタン（ナビ内） */
+.navBtn-cta {
+  display: inline-block;
+  padding: 10px 30px;
+  border-radius: 999px;
+  background: #f7931a;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/*--------------------------------
+  ハンバーガーメニュー（モバイル用）
+--------------------------------*/
+.hamburger {
+  width: 44px;
+  height: 44px;
+  display: none;          /* PCでは非表示 */
+  place-content: center;
+  gap: 5px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  margin-left: auto;      /* 右寄せ */
+}
+.hamburgerBar {
+  width: 24px;
+  height: 3px;
+  background: #9aa0a6;
+  display: block;
+  border-radius: 2px;
+}
+
+/*--------------------------------
+  ファーストビュー（背景図形や画像）
+--------------------------------*/
 .topImages {
-    position: relative;
-    min-height: 700px;
-    padding: 48px 24px 200px;
-    display: grid;
-    align-items: center;
-    gap: 24px;
-    overflow: hidden;
+  position: relative;
+  min-height: 700px;
+  padding: 48px 24px 200px;
+  display: grid;
+  align-items: center;
+  gap: 24px;
+  overflow: hidden;
 }
-
 .topImageChild {
-    display: inline-block;
-    position: relative;
-    top: -50px
+  display: inline-block;
+  position: relative;
+  top: -50px;
 }
 
-/*左上の三角形*/
+/* 左上三角形 */
 .TriangleLeft {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 335px;
-    aspect-ratio: 1.1/1;
-    translate: -10% 0%;
-    z-index: 0;
+  position: absolute;
+  top: 0; left: 0;
+  width: 335px;
+  aspect-ratio: 1.1/1;
+  translate: -10% 0%;
+  z-index: 0;
 }
-
-/*楕円形のスタイル*/
+/* 背景の楕円 */
 .oval {
-    position: absolute;
-    inset: 0;
-    width: min(46vw, 527px);
-    aspect-ratio: 1/1;
-    translate: -10% 15%;
-    z-index: 0;
+  position: absolute;
+  inset: 0;
+  width: min(46vw, 527px);
+  aspect-ratio: 1/1;
+  translate: -10% 15%;
+  z-index: 0;
 }
-
-/*No.1のサークル*/
-.circle {
-    position: absolute;
-    top: 110px;
-    left: 45%;
-    height: auto;
-    z-index: 3;    
-}
-
-/*人の画像のスタイル*/
+/* 人物画像 */
 .human {
-    position: absolute;
-    align-self: start;
-    justify-self: end;
-    width: 775px;
-    aspect-ratio: 1.2/1;
-    translate: 0% -5%;
-    z-index: 1;
+  position: absolute;
+  align-self: start;
+  justify-self: end;
+  width: 775px;
+  aspect-ratio: 1.2/1;
+  translate: 0% -5%;
+  z-index: 1;
 }
-
-/*右下三角のスタイル*/
+/* 右下三角形 */
 .TriangleRight {
-    position: absolute;
-    justify-self: end;
-    margin-top: 320px;
-    width: 400px;
-    aspect-ratio: 1/1;
-    z-index: 0;
+  position: absolute;
+  justify-self: end;
+  margin-top: 320px;
+  width: 400px;
+  aspect-ratio: 1/1;
+  z-index: 0;
 }
 
-.topMessage {
-    font-size: clamp(28px,3.6vw,44px);
-    line-height: 1.25;
-    margin: 12px 0 28px;
-    font-weight: 800;
+/* モバイル用メイン画像 */
+.mainImgForMobile {
+  display: none;
+  position: absolute;
+  inset: 0 auto auto 0;
+}
+
+/*--------------------------------
+  タイトル／バッジ／CTA／注釈
+--------------------------------*/
+.topTitleCluster {
+  position: absolute;
+  top: clamp(80px, 12vw, 210px);
+  left: clamp(16px, 23vw, 460px);
+  width: min(630px, 65vw);
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  column-gap: clamp(12px, 2vw, 20px);
+  row-gap: clamp(12px, 2vw, 18px);
+  font-family: "Lato", sans-serif;
+  z-index: 3;
+}
+
+:root {
+  --badgeW: clamp(140px, 12vw, 200px); /* バッジの幅 */
+  --gap: clamp(4px, 1vw, 12px);        /* タイトルとバッジの余白 */
+}
+
+.titleWrap {
+  position: relative;
+  padding-right: calc(var(--badgeW) + var(--gap) / 2); /* タイトルがバッジに重ならないよう余白を確保 */
 }
 
 .topTitle {
-    position: absolute;
-    top: 192px;
-    left: 23%;
-    max-width: 480px;
-    font-family: "Lato", sans-serif;
-    z-index: 3;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 800;
+  font-size: 42px;
+  color: #2c2b2b;
 }
 
-.topTitle h1 {
-    font-size: clamp(28px, 3.6vw, 44px);
-    line-height: 1.5;
-    font-weight: 800;
-    font-size: 42px;
-    color: #2c2b2b;
+/* No.1バッジ */
+.badge {
+  position: absolute;
+  top: -30%;
+  right: calc(0.25 * var(--gap));
+  width: var(--badgeW);
+  height: auto;
+  z-index: 3;
 }
 
+/* CTAボタン（ファーストビュー用） */
 .topBtn-cta {
-    display:inline-block;
-    padding:20px 150px;
-    border-radius:999px;
-    background:#f7931a;
-    color:#fff;
-    text-decoration:none;
-    font-weight:700;
-    white-space:nowrap;
-    font-size: 16px;
+  display: inline-block;
+  padding: 20px 150px;
+  border-radius: 999px;
+  background: #f7931a;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 16px;
+  width: 500px;
 }
 
+/* 注釈テキスト */
 .topAnnotation {
+  margin: 0;
+  font-size: 12px;
+}
+
+/*--------------------------------
+  メディアクエリ
+--------------------------------*/
+
+/* 1080px以下：ナビ非表示＋ハンバーガー表示 */
+@media only screen and (max-width: 1080px) {
+  .nav { display: none; }
+  .hamburger { display: grid; }
+}
+
+/* 767px以下：モバイルレイアウト */
+@media only screen and (max-width: 767px) {
+
+  /* ロゴを縮小 */
+  .logo {
+    margin-left: -8px;
+    height: 16px;
+  }
+
+  /* 背景図形・人物画像は非表示 */
+  .TriangleLeft,
+  .human,
+  .oval,
+  .TriangleRight {
+    display: none;
+  }
+  
+  /* モバイル用メイン画像を表示 */
+  .mainImgForMobile {
+    display: block;
+    position: static;
+    width: 100%;
+    margin-top: -22px; /* 上に少しずらす */
+  }
+
+  /* ファーストビューは縦並びに */
+  .topImages {
+    display: block;
+    min-height: auto;
+    padding: 0;
+    position: relative;
+  }
+
+  .topTitleCluster {
+    position: static;
+    width: min(630px, 65vw);
+    margin-left: 20px;
+    row-gap: clamp(12px, 2vw, 18px);
+  }
+
+  /* モバイル用の変数上書き */
+  :root {
+    --badgeW: clamp(22px, 14vw, 520px);
+    --gap: clamp(2px, 28vw, 520px);
+  }
+
+  .titleWrap {
+    position: relative;
+    padding-right: calc(var(--badgeW) + var(--gap) / 2);
+  }
+
+  .topTitle {
+    margin: 0;
+    line-height: 1.6;
+    font-weight: 800;
+    font-size: 22px;
+    color: #2c2b2b;
+  }
+
+  /* No.1バッジ（モバイル位置調整） */
+  .badge {
+    position: absolute;
+    top: 62%;
+    right: calc(1.9 * var(--gap));
+    width: var(--badgeW);
+    height: auto;
+    z-index: 3;
+  }
+
+  /* CTAボタンをモバイルサイズに */
+  .topBtn-cta {
+    padding: 18px 110px;
+    font-size: 14px;
+    width: 470px;
+  }
+
+  .topAnnotation {
+    margin: 0;
+    white-space: nowrap;
     font-size: 12px;
+  }
 }
