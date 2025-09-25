@@ -66,3 +66,43 @@ let type2;
 // 関係演算子
 // ==：両辺が同じ値か判定
 // ===：両辺の値と型の両方が合っているか判定
+
+// ■ イベント
+// 例えばクリックがその要素が発生すると、属性に指定されたJavaScript関数が実行される。
+function showMessage() {
+    alert('ボタンがクリックされました！');
+}
+
+// getElementByIdメソッドでボタン要素を取得し、
+// addEventListenerメソッドを使ってクリックイベントに反応する無名関数を追加している。
+// ボタン要素を取得
+var button = document.getElementById('myButton');
+
+// クリックイベントリスナーを追加
+button.addEventListener('click', function() {
+    alert('ボタンがクリックされました！（2）')
+})
+
+// ■ イベントの基本的な使い方
+// HTML
+// <イベントが使用可能なタグ イベント=呼び出すJavaScriptの関数名();>
+// JavaScript
+// function 関数名() {
+//   イベント発火時の処理
+// }
+
+function eventA() {
+    alert("onclickイベントが発火しました");
+}
+
+function eventB() {
+    alert("oninputイベントが発火しました");
+}
+
+function eventC() {
+    alert("onmouseoutイベントが発火しました");
+}
+
+function eventD() {
+    alert("onmouseoverイベントが発火しました");
+}

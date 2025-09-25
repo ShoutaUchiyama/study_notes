@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <title>jQuery</title>
+  </head>
+  <body>
+    <div>
+        <button class="buttonA">このボタン押下で<br>取得したテキストをアラート表示する。</button>
+        <button class="buttonB">このボタン押下で<br>テキストを変更する。</button>
+        <button class="buttonC">このボタン押下で<br>テキストを変更する。</button>
+        <button class="buttonD">クリア</button>
+        <h3 class="target_textA">このテキストを取得する。</h3>
+        <h3 class="target_textB">このテキストは変更前のテキスト。</h3>
+    </div>
+
+    <div id="boxA">ボックス1<br>この要素にマウスを載せると色が赤に変わる</div>
+    <div id="boxB">ボックス2<br>この要素からマウスが離れる色が青に変わる</div>
+    <div id="boxC">この要素にマウスを載せると文字が大きくなりマウスが離れると戻る</div>
+    <div class="boxD">この要素にマウスを載せるとボックス１と２の色が白に変わる</div>
+
+    <div class="addClass-removeClass">
+        <div>
+            <button class="button_a">このボタンを押下で<br>ボックス１が黄色になる。</button>
+            <button class="button_b">このボタンを押下で<br>ボックス１が白色になる。</button>
+            <button class="button_c">このボタンを押下で<br>ボックス２が消える。</button>
+            <button class="button_d">このボタンを押下で<br>ボックス２が現れる。</button>
+        </div>
+
+        <div>
+            <div class="box_a">ボックス１<br>この要素の色が黄色になる。</div>
+            <div class="box_b">ボックス２<br>この要素にdisplay:none;がつく。</div>
+        </div>
+    </div>
+    <!-- ここにjavascriptのファイルを書く -->
+    <script src="index.js"></script>
+  </body>
+</html>

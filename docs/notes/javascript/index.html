@@ -6,6 +6,15 @@
   </head>
   <body>
     <h1>プログラミング学習始めよう！</h1>
+    <button onclick="showMessage()">クリックしてください</button>
+    <button id="myButton">クリックしてください(2)</button>
+    
+    <div>
+      <button class="button" onclick=eventA();>ボタンを押下でイベント発火</button>
+      <input class="input" type=text oninput=eventB(); placeholder="ここに文字を入力する度にイベント発火">
+      <div class="block_a" onmouseout=eventC();>この要素からマウスが離れてイベント発火</div>
+      <div class="block_b" onmouseover=eventD();>この要素にマウスが乗ってイベント発火</div>
+    </div>
 
     <!-- ここにjavascriptのファイルを書く -->
     <script src="index.js"></script>

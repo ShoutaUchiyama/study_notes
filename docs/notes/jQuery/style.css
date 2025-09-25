@@ -1,0 +1,61 @@
+#boxA {
+    width: 200px;
+    padding: 15px;
+    border: 1px solid black;
+    background-color: white; /* このプロパティ値を操作する */
+    margin-bottom: 20px;
+}
+
+#boxB {
+    width: 200px;
+    padding: 15px;
+    border: 1px solid black;
+    background-color: white; /* このプロパティ値を操作する */
+    margin-bottom: 20px;
+}
+
+#boxC {
+    border: 1px solid black;
+    padding: 15px;
+    font-size: 14px; /* このプロパティ値を操作する */
+    margin-bottom: 20px;
+}
+
+.boxD {
+    width: 200px;
+    border: 1px solid black;
+    padding: 15px;
+}
+
+.addClass-removeClass {
+    margin-top: 100px;
+}
+
+.button_a, .button_b, .button_c, .button_d {
+    width: 40%;
+    margin: 15px;
+}
+
+.box_a {
+    width: 200px;
+    height: 150px;
+    border: 1px solid black;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.box_b {
+    width: 200px;
+    height: 150px;
+    border: 1px solid black;
+    background-color: pink;
+    padding: 15px;
+}
+
+.add_hidden { /* クラスの追加時はこのCSSが当たるようにする */
+    display: none;
+}
+
+.add_color_yellow { /* クラスの追加時はこのCSSが当たるようにする */
+    background-color: yellow;
+}
