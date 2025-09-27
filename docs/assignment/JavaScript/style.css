@@ -1,0 +1,144 @@
+/* ================================
+   ベースレイアウト
+   ================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* デザイン調整用の変数（動作ロジックには無関係） */
+  --bg: #0f172a;           /* 背景（濃紺） */
+  --panel: #111827;        /* パネル */
+  --text: #e5e7eb;         /* 文字色 */
+  --muted: #9ca3af;        /* 補助文字色 */
+  --accent: #60a5fa;       /* アクセント（青） */
+  --accent-strong: #3b82f6;
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(60vw 60vh at 50% 10%, #1f2937 0%, var(--bg) 60%);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  display: grid;
+  place-items: center;
+}
+
+.container {
+  width: min(960px, 92vw);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  box-shadow: 0 20px 60px var(--shadow);
+  padding: 32px 24px 28px;
+  backdrop-filter: blur(6px);
+}
+
+/* ================================
+   タイトル
+   ================================ */
+.title {
+  font-size: clamp(20px, 2vw + 12px, 28px);
+  margin: 0 0 12px;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+/* ================================
+   時刻表示（.hours/.minutes/.seconds/.milliseconds）
+   - JSが値を書き換える箇所。構造やクラスはそのまま。
+   ================================ */
+.stopWatch-time {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  padding: 12px 8px 18px;
+}
+
+.time-cell > .hours,
+.time-cell > .minutes,
+.time-cell > .seconds,
+.time-cell > .milliseconds {
+  /* 数字自体の見た目（ロジックと無関係） */
+  display: inline-block;
+  min-width: 2ch; /* 桁ブレ対策（ミリ秒は1桁想定のまま） */
+  text-align: right;
+  font-size: clamp(42px, 8vw, 84px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.label {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: clamp(12px, 1.5vw, 14px);
+}
+
+.sep {
+  opacity: 0.65;
+  font-size: clamp(28px, 6vw, 48px);
+  transform: translateY(-2px);
+}
+
+/* ================================
+   ボタン（#startBtn / #stopBtn / #resetBtn）
+   - JSが .stopWatch-btnChild / .no-hover を付与・削除する。
+   - :hover を定義 → .no-hover で無効化（要求仕様に沿う）
+   ================================ */
+.stopWatch-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.stopWatch-btnChild {
+  appearance: none;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.stopWatch-btnChild:hover {
+  /* “hoverが効くとき”の視覚効果。JSで .no-hover を付けると無効にする。 */
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(59, 130, 246, 0.5);
+}
+
+.stopWatch-btnChild:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+
+/* 無効化ロジック（JSが .no-hover を付与 & disabled=true を設定） */
+.stopWatch-btnChild.no-hover,
+.stopWatch-btnChild:disabled {
+  pointer-events: none;    /* hover/クリックを完全に無効化 */
+  opacity: 0.6;            /* 無効化の視覚的フィードバック */
+  transform: none;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+  cursor: default;
+}
+
+/* アクセシビリティ向上（キーボードフォーカスのリング） */
+.stopWatch-btnChild:focus-visible {
+  outline: 3px solid #fde047; /* アンバー */
+  outline-offset: 2px;
+}

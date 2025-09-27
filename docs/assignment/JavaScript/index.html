@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stopwatch</title>
+
+  <!-- スタイル -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!--
+    ストップウォッチ本体。
+    ※ JS 側のクラス名・IDに合わせたDOM構造
+      - 時刻表示: .hours / .minutes / .seconds / .milliseconds
+      - ボタン: #startBtn / #stopBtn / #resetBtn
+      - ボタングループ共通: .stopWatch-btnChild
+  -->
+  <main class="container">
+    <h1 class="title">Stopwatch</h1>
+
+    <!-- 時刻表示（初期値はJS側で0を描画） -->
+    <div class="stopWatch-time" aria-live="polite" aria-atomic="true">
+      <span class="time-cell"><span class="hours">0</span></span>
+      <span class="sep">:</span>
+      <span class="time-cell"><span class="minutes">0</span></span>
+      <span class="sep">:</span>
+      <span class="time-cell"><span class="seconds">0</span></span>
+      <span class="sep">.</span>
+      <span class="time-cell"><span class="milliseconds">0</span></span>
+    </div>
+
+    <!-- 操作ボタン -->
+    <div class="stopWatch-buttons" role="group" aria-label="stopwatch controls">
+      <!--
+        JS側ではクリック時に .no-hover を付与し、hover/クリックを抑止する。
+      -->
+      <button id="startBtn" class="stopWatch-btnChild" type="button">Start</button>
+      <button id="stopBtn" class="stopWatch-btnChild" type="button" disabled>Stop</button>
+      <button id="resetBtn" class="stopWatch-btnChild" type="button" disabled>Reset</button>
+    </div>
+  </main>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+  <script src="index.js"></script>
+</body>
+</html>
