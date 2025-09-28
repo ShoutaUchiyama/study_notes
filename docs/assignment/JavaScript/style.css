@@ -52,7 +52,6 @@ body {
 
 /* ================================
    時刻表示（.hours/.minutes/.seconds/.milliseconds）
-   - JSが値を書き換える箇所。構造やクラスはそのまま。
    ================================ */
 .stopWatch-time {
   display: flex;
@@ -93,7 +92,6 @@ body {
 /* ================================
    ボタン（#startBtn / #stopBtn / #resetBtn）
    - JSが .stopWatch-btnChild / .no-hover を付与・削除する。
-   - :hover を定義 → .no-hover で無効化（要求仕様に沿う）
    ================================ */
 .stopWatch-buttons {
   display: flex;

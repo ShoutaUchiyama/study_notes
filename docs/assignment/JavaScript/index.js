@@ -1,9 +1,5 @@
 // ================================
-// ストップウォッチ（設定値は変更しない）
-// - インターバル: 100ms
-// - 時分秒ミリ秒の上限・桁上がりロジックは元のまま
-// - DOM構造やクラス名／IDはそのまま利用
-// - 機能の追加・削除はせず、読みやすさと保守性を改善
+// ストップウォッチ
 // ================================
 
 $(document).ready(function () {
@@ -12,6 +8,10 @@ $(document).ready(function () {
   // ----------------
   const timeSelectors = [".hours", ".minutes", ".seconds", ".milliseconds"];
   const HOUR = 0, MINUTE = 1, SECOND = 2, MILLISECOND = 3;
+  const MS_PER_SEC = 10;     // ミリ秒カウンタが1秒になるまでの単位
+  const SEC_PER_MIN = 60;    // 秒が1分になるまで
+  const MIN_PER_HR  = 60;    // 分が1時間になるまで
+  const RESET_VALUE = 0;
 
   // ボタンのjQueryオブジェクトを事前に取得
   const $startBtn = $("#startBtn");
@@ -22,7 +22,7 @@ $(document).ready(function () {
   // ----------------
   // 状態（数値・タイマー）
   // ----------------
-  let hr = 0, min = 0, sec = 0, ms = 0; // 初期値
+  let hr = min = sec = ms = RESET_VALUE; // 初期値
   let timerId = null;                   // setInterval のID（稼働中判定にも使用）
 
   // ----------------
@@ -81,14 +81,14 @@ $(document).ready(function () {
    */
   function tick() {
     ms++;
-    if (ms === 10) {
-      ms = 0;
+    if (ms === MS_PER_SEC) {
+      ms = RESET_VALUE;
       sec++;
-      if (sec === 60) {
-        sec = 0;
+      if (sec === SEC_PER_MIN) {
+        sec = RESET_VALUE;
         min++;
-        if (min === 60) {
-          min = 0;
+        if (min === MIN_PER_HR) {
+          min = RESET_VALUE;
           hr++;
         }
       }
@@ -132,7 +132,7 @@ $(document).ready(function () {
       clearInterval(timerId);
       timerId = null;
     }
-    hr = min = sec = ms = 0;
+    hr = min = sec = ms = RESET_VALUE;
     renderAll();
     activateButtons($resetBtn);
     activateButton($stopBtn);
