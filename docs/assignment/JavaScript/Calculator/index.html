@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculator</title>
+  <!-- CSS 読み込み -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 背景のラディアルグロー（紫と青の光の演出） -->
+  <div class="bg-glow bg-glow--purple"></div>
+  <div class="bg-glow bg-glow--blue"></div>
+
+  <!-- 電卓本体（ガラス風パネル） -->
+  <main class="calc glass" role="application" aria-label="calculator">
+    <!-- 入力や計算結果を表示するディスプレイ -->
+    <div class="display" id="display" aria-live="polite">0</div>
+
+    <!-- ボタン群（数字キー・演算子キー） -->
+    <div class="keys" role="group" aria-label="calculator keys">
+      <!-- 数字キーと演算子 -->
+      <button class="key" data-value="7">7</button>
+      <button class="key" data-value="8">8</button>
+      <button class="key" data-value="9">9</button>
+      <button class="key op" data-value="+">+</button>
+
+      <button class="key" data-value="4">4</button>
+      <button class="key" data-value="5">5</button>
+      <button class="key" data-value="6">6</button>
+      <button class="key op" data-value="-">-</button>
+
+      <button class="key" data-value="1">1</button>
+      <button class="key" data-value="2">2</button>
+      <button class="key" data-value="3">3</button>
+      <button class="key op" data-value="*">×</button>
+
+      <button class="key" data-value="0">0</button>
+      <button class="key" data-value="00">00</button>
+      <button class="key" data-value=".">.</button>
+      <button class="key op" data-value="/">/</button>
+
+      <!-- AC（オールクリア）ボタン -->
+      <button class="key wide ghost" data-action="clear" aria-label="All Clear">AC</button>
+      <!-- =（イコール・計算実行）ボタン -->
+      <button class="key wide accent" data-action="equals" aria-label="Calculate">=</button>
+    </div>
+  </main>
+
+  <!-- jQuery 読み込み（CDN利用） -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- 電卓のロジック -->
+  <script src="index.js"></script>
+</body>
+</html>
