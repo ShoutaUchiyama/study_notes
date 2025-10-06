@@ -75,8 +75,9 @@ $(function () {
     try {
       const result = Number(Function(`"use strict"; return (${safe});`)());
       if (Number.isFinite(result)) {
-        // 計算結果を丸めて表示
-        expression = String(+parseFloat(result.toFixed(12)));
+        const DECIMAL_PRECISION = 12;
+        // 計算結果を丸めて表示(小数点以下を12桁に丸める)
+        expression = String(+parseFloat(result.toFixed(DECIMAL_PRECISION)));
         justCalculated = true;
         update();
       }
@@ -86,8 +87,13 @@ $(function () {
   // ボタンクリック処理
   $keys.on("click", ".key", function () {
     const $btn = $(this);
+    const BUTTON_PRESS_OFFSET = 1; // px
+    const BUTTON_PRESS_DURATION = 60; // ms
+
     // ボタンを押したときのアニメーション
-    $btn.stop(true, true).animate({ top: "+=1" }, 60).animate({ top: "-=1" }, 60);
+    $btn.stop(true, true)
+      .animate({ top: `+=${BUTTON_PRESS_OFFSET}` }, BUTTON_PRESS_DURATION)
+      .animate({ top: `-=${BUTTON_PRESS_OFFSET}` }, BUTTON_PRESS_DURATION);
 
     const act = $btn.data("action");
     if (act === "clear") return clearAll();
