@@ -1073,3 +1073,207 @@ except Exception:
         root.score_trace(name="judge_pass", value=1.0 if score>=PASS_THRESHOLD else 0.0)
 ```
 そして得られたスコアをLangfuseに送信している。judge_passは閾値を超えれば1、それ以外は0を返す。閾値はPASS_THRESHOLDとして定義され、今回はPASS_THRESHOLD = 0.7を指定している。
+
+---
+
+### プロンプトを改善
+プログラムを使ってプロンプトを更新する。<br>
+[`update_prompt.py`](chapter6/src/update_prompt.py)<br>
+Langfuseの画面上からプロンプトを参照するとバージョン2のプロンプトにproductionラベルが貼られているのが分かる。
+![alt text](chapter6/images/image.png)
+
+## AIエージェントとは
+ここではAIエージェントのことを"A system that runs tools in a loop to achieve a goal."(ゴールを達成するためにループの中でツールを実行するシステム)と定義する。つまり、以下の3要素を持つシステムをAIエージェントと呼ぶ。
+| 要素 | 内容 |
+| :-- | :--|
+| Tools(ツール) | 検索API、データベース、計算機能など、LLMが呼び出せる外部機能 |
+| Loop(ループ) | 思考 → 行動 → 観察を繰り返すサイクル構造 |
+| Goal(ゴール) | 「市場調査レポートを作成する」「顧客の問い合わせに根拠付きで回答する」などの達成目標 |
+
+この3要素がAIエージェントの最小限の構成要素になる。実用的なエージェントでは、さらに以下の要素を組み込むことで、より高度な動作を実現できる。
+
+- Profile(役割定義):「法務専門家」「カスタマーサポート担当」など、エージェントの専門性や振舞い方を定義する。Systemプロンプトのこと。構造化されたプロフィール定義を行うことにより、Systemプロンプトを毎回すべて入れるのではなく、必要なプロフィール（例えば50種類ある項目のうち、生年月日と名前）だけ取り出して利用する、といった使い方をすることで、コンテキスト漏れを防ぐことができる。
+- Memory(記憶機構): 会話履歴や過去の検索結果を保持し、文脈を踏まえた判断を可能にする。短期記憶（現在のタスク内）と長期記憶（タスク間での知識の永続化）の2種類がある。
+<br><br>
+このような要素を組み合わせて、AIエージェントは<b>ゴールに向かって自律的にツールを選択し、達成条件が満たされたかを判断し、満たすまで動き続ける</b>挙動をすることで、自律的な挙動を実現する。
+
+### ワークフローとエージェントの比較表
+| 項目 | ワークフロー | エージェント |
+| ---  |  ---------- | ------------ |
+| **処理の流れ** | 固定 | 可変 |
+| **できる** | できる | 難しい |
+| **デバッグ** | 簡単 | 複雑 |
+| **コスト** | 低い | 高い(LLM多用) |
+
+---
+
+### どちらを使うべきか
+純粋なワークフローが適しているのは、ツールやフローのパターンが有限であり、あまり変化が起きない処理。例えば、経費精算の承認フローや、定型的な帳票処理では、決められた手順を確実に踏むことが何より重要になる。一方、<b>純粋なエージェントが活きるのは、探索的な調査業務、状況が刻々と変化する顧客データを用いた分析・判断のような作業</b>。<br>
+しかし実際の多くの業務では、両者のハイブリッドアプローチが効果的。例えば、<b>基本フローはワークフローで固定しつつ、特定のステップだけエージェント的に処理する</b>といったパターン。これとは逆に、基本はエージェント的に構築しつつ、特定のツールだけワークフロー的に連続して行うこともある。あるいは、「Human-in-the-Loop」という、ワークフロー／エージェントが処理する中で人間が関与し承認を行うパターンも重要な選択肢。このような設計は<b>自動化の恩恵を受けつつリスクを管理する現実的なアプローチ</b>。選択の基準として考慮すべきは、失敗時の影響度、処理量とコスト制約がある。失敗が許されない重要な判断ほど、事前にしっかりと設計してワークフロー寄りに、試行錯誤が許される探索的なタスクほど、エージェント寄りに設計する。また、はじめてAIを用いたフローを設計する場合は、<b>予測可能なワークフローから始めて、徐々にエージェントの要素を取り入れていくほうがよい</b>。
+
+## 最初のエージェントを作る～Web検索の自動化～
+### ReActパターンとは
+ReActは「Reasoning + Acting」の略で、<b>「考えて→行動して→結果を観察」</b>を繰り返すシンプルなパターン。
+
+---
+
+### 環境構築
+Tavily(タビリー)はWeb検索APIサービス。[`Tavily公式ページ`](https://www.tavily.com/)
+
+---
+
+### 実装コード全体
+[`react_search.py`](chapter7/src/react_search.py)
+
+---
+
+### ソースコードの解説
+#### (1)System Prompt と create_agent で ReAct原則を指示
+最初にReActの行動原則（初手検索・ツールなしで結論不可・出典URL必須・Final Anser形式）をSystem Promptにまとめ、create_agent()に渡している。Tought／Action／Observationの書式はプロンプトで指定するだけで、scratchpadの管理は内部処理に任せる。
+
+```python:
+def build_system_prompt(tools: Iterable[BaseTool]) -> str:
+    """create_agent 用の system prompt を生成する"""
+    tool_section = describe_tools(tools)
+    return textwrap.depent(
+        f"""
+        あなたは調査と要約を担当するアシスタントです。以下のルールを厳守して質問に答えてください。
+
+        1. 必ず最初のアクションでツールを使って検索し、最新情報を取得すること。
+        2. ツールを使わずに結論を出さないこと。
+        3. 回答は必ず検索結果に基づき、出典URLを各ポイントの末尾に半角括弧で記載すること。
+        4. 最終回答は「Final Answer:」で始め、日本語で簡潔にまとめること。
+
+        利用可能なツール:
+        {tool_section}
+
+        Thought/Action/Observation 形式で行動計画を示し、十分な根拠が集まったら Final Answer を出力してください。
+        """
+    ).strip()
+```
+
+#### (2)ツール定義とフォールバック
+Tavily APIがあればオンライン検索、なければオフラインサンプルを返す`offline_search`に自動フォールバックする。ツールを増やす場合も`tools=[...]`に追加するだけ。
+
+```python:
+    if tavily_api_key:
+        search_tool = TavilySearch(
+            max_results=3,
+            include_answer=True,
+        )
+    else:
+        print("[i] TAVILY_API_KEY が未設定のため、ReAct エージェントはオフライン検索データを使用します。")
+        search_tool = offline_search
+
+    tools = [search_tool]
+    # LangChain v1 では create_agent + system prompt が公式推奨構成のため、
+    # ReAct 要件（初手で検索し Final Answer を整形）を system prompt に要約する。
+    system_prompt = build_system_prompt(tools)
+
+    return create_agent(
+        llm,
+        tools=tools,
+        system_prompt=system_prompt,
+    )
+```
+
+#### (3)実行とステップ上限(recursion_limit)
+実行時はLangGraphの`recursion_limit`でLLMステップとツールステップの合計上限を管理する。LangChain v1以前に使っていた`max_iterations`や`stop`は不要。上限超過はGraphRecursionErrorで通知する。
+```python:
+    try:
+        result = agent.invoke(
+            {"mesages": [{"role": "user", "content": question}]},
+            config={"recursion_limit": recursion_limit},
+        )
+    except GraphRecursionError as exc:
+        print("\n" + "=" * 60)
+        print("[Error] LangGraph の再起上限に達したため途中で停止しました。")
+        print(
+            "ヒント：`--max-steps`で値を大きくするか、質問を具体化して再実行してください"
+            f"(現在の設定: {recursion_limit})."
+        )
+        print(f"詳細: {exc}")
+        return 
+```
+
+#### (4)出力の標準化とサマリー計測
+最終回答はmessages内の最後のAIMessageを優先し、なければ`result["output"]`をフォールバック。さらに`compute_summary_stats()`でsteps/tool_calls/sourcesを推定し、実行結果を定型形式で表示する。
+```python:
+    final_message = next((m for m in reversed(messages) if isinstance(m, AIMessage)), None)
+    final_answer = _content_to_text(final_message.content).strip() if final_message else ""
+    # LangGraph v1 create_agent は result["output"]に値を入れないため messages 側の値を優先し、
+    # 従来 AgentExecutor 互換で output にのみ格納されるケースはフォールバックで吸収する。
+    if not final_answer:
+        output_text = result.get("output", "")
+        final_answer = _content_to_text(output_text).strip() if output_text else ""
+    if final_answer and not final_answer.startswith("Final Answer:"):
+        final_answer = f"Final Answer: {final_answer}"
+
+    print("\n" + "=" * 60)
+    print("最終回答:\n")
+    print(final_answer)
+
+    # 標準化されたサマリー出力
+    steps, tool_calls, sources = compute_summary_stats(result, final_answer)
+
+    # satisfied: 何らかの最終回答が生成されたかどうか
+    satisfied = bool(final_answer)
+
+    print(
+        f"\n[Summary] steps={steps} tool_calls={tool_calls} sources={sources} "
+        f"satisfied={satisfied} limit={recursion_limit}"
+    )
+```
+---
+
+### 実行結果の解説
+```txt:
+=== 検証設定 ===
+モデル: gpt-4o-mini
+============================================================
+
+=== ReAct Agent による検索・要約 ===
+
+質問: 2026年の生成 AI 業界の主要な動向を3つ教えてください
+
+============================================================
+
+============================================================
+最終回答:
+
+Final Answer: ### Thought/Action/Observation
+
+1. **検索結果の確認**: 2026年の生成AI業界の主要な動向に関する情報を収集しました。複数の信頼できるソースからの情報を確認し、トレンドを特定しました。
+
+2. **情報の要約**: 収集した情報をもとに、2026年の生成AIに関する主要な動向を3つに絞り込みます。
+
+3. **出典の明記**: 各ポイントに出典を明記します。
+
+### 主要な動向
+
+1. **エージェンティックワークフローの標準化**: 生成AIは単なるアシスタントから、タスクを計画し、実行するエージェントへと進化します。これにより、業務の効率化が図られ、企業全体でのAIの導入が進むと予測されています（出典: [TechBlocks](https://tblocks.com/articles/generative-ai-trends/)）。
+
+2. **業界特化型モデルの台頭**: 一般的なモデルよりも、特定の業界に特化した生成AIがROI（投資利益率）を向上させることが期待されています。これにより、各業界のニーズに応じた精度の高いAIが求められるようになります（出典: [Vassar Digital](https://vassardigital.ai/blog/generative-ai-trends-for-2026-what-enterprises-must-prepare-for-next/)）。
+
+3. **マルチモーダルAIの実用化**: 生成AIはテキストだけでなく、画像、音声、動画など複数のデータ形式を同時に処理できるようになります。これにより、より高度なサービスやアプリケーションが実現されると考えられています（出典: [Vassar Digital](https://vassardigital.ai/blog/generative-ai-trends-for-2026-what-enterprises-must-prepare-for-next/)）。
+
+### Final Answer:
+2026年の生成AI業界の主要な動向は以下の通りです：
+1. エージェンティックワークフローの標準化。
+2. 業界特化型モデルの台頭。
+3. マルチモーダルAIの実用化。
+
+[Summary] steps=2 tool_calls=1 sources=3 satisfied=True limit=12
+```
+
+1. Thoughtの生成
+LLMが「関連するデータを収集する」と自分の思考過程を説明
+2. Actionの選択
+tavily_searchというツールを選択
+3. ActionInputの生成
+具体的な検索クエリ「2026年AI業界動向」を生成
+4. Observationの挿入
+Agentランタイムが実際にツールを実行し、結果のJSONを挿入
+5. Final Answerの生成
+検索結果を踏まえて、実際のURLを引用しながら回答を構築
+
