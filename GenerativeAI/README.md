@@ -1277,3 +1277,162 @@ Agentランタイムが実際にツールを実行し、結果のJSONを挿入
 5. Final Answerの生成
 検索結果を踏まえて、実際のURLを引用しながら回答を構築
 
+## 制御の改善～LangGraphで状態管理を明確化～
+LangChainのAgentランタイムでは停止の判断がすべてLLMに委ねられている。プロンプトに「Final Answer」という文字列が出現したら終了、という単純なルールしかない。つまり、<b>LLMが「ゴールを達成できた」と判断すれば1回の検索で終了するし、逆に延々と検索を続けることもある。</b>例えば「出典を3つ以上集めてから終了する」という要件を考えてみる。プロンプトで「最低3回検索してください」と指示できるが、<b>LLMがそのしじを守るかは不確実</b>である。react_search.pyでは「recursion_limit」を使って、「最大5回まで」という上限を設けていたが、これは暴走を防ぐための制限に過ぎない。実務ではどちらかというと<b>下限の保証</b>がしたくなることもある。「最低N件の出典を確保する」「信頼度が一定水準を超えるまで調査を続ける」といった品質基準を、プロンプトの指示ではなく、Pythonコードで確実に制御したい。実際には、次のような判定をコードで保証したくなるはずである。
+- 「出典が3件未満なら、まだ調査を続ける」（下限の保証）
+- 「出典が3件以上で、かつ信頼度が0.8以上なら終了」（品質基準の複合条件）
+- 「ステップ数が5階に達したら、、出典が足りなくても終了」（上限による安全装置）
+<br>
+このような保証をするためにLangGraphを利用する。ここでは同じ「検索→要約」タスクをLangGraphで実装し、品質基準をPythonコードで明示的に保証する。状態（何件の出典を集めたか、どの程度満足したか）をコードで管理することで、「最低限これだけはやる」という下限を確実に守れるようになる。LangGraphのアプローチは、エージェントの処理を複数のノードに分割し、ノードの遷移条件をコードで明示する方式。具体的には、agent(思考)、tools(検索実行)、compose(観測の整形)という3つのノードを作り、should_continueという関数で「次はどのノードに進むか、それとも終了するか」を判定する。<br>
+agentノードでLLMが思考した後、`should_continue`が「ゴール達成にはまだ情報が足りないか？」を判定する。足りない場合はtools→compose→agentとループし、ゴールを達成できる十分な情報が集まればENDに遷移してタスク完了。LangGraphでは、この状態（state）を受け取り、「次はどのノードに進むか、それとも終了するか」を返す。<b>LangChainのAgentランタイムではLLM任せだった判断ロジックが、ここではコードとして可視化され、制御可能になる</b>。
+
+### should_continueの内部動作
+should_continue関数は、現在の状態（state）を受け取り、次にどのノードに遷移するかを決定する。<br>
+
+```python:
+def should_continew(state: AgentState) -> Literal["tools", "compose", "agent", END]:
+    # 1. ステップ数上限チェック
+    if state["step_count"] >= MAX_STEPS: # ①
+        print(f"[Control] ステップ数上限（{MAX_STEPS}）に到達 → 終了")
+        return END
+
+    last_message = state["messages"][-1]
+
+    # 2. LLMがツール呼び出しを要求しているか？
+    if isinstance(last_message, AIMessage) and last_message.tool_calls: # ②
+        print("[Control] LLMがツール呼び出しを要求 → tools ノードへ遷移")
+        return "tools"
+
+    # 3. ツール実行結果を受信したか？
+    if isinstance(last_message, ToolMessage): # ③
+        print("[Control] ツール実行結果を受信 → compose ノードへ遷移")
+        return "compose"
+
+    # 4. 最低検索回数を満たし、かつ Agent が満足
+    if state["search_count"] >= MIN_SEARCHES and state["satisfied"]: # ④
+        print(f"[Control] 最低{MIN_SEARCHES}回の検索完了 & Agent満足 → 終了")
+        return END
+    
+    # 5. 最低検索回数未満だが Agent が満足している場合
+    if state["search_count"] < MIN_SEARCHES and state["satisfied"]: # ⑤
+        print(f"[Control] 検索{state['search_count']}/{MIN_SEARCHES}回、最低回数未達 → 追加検索を要求")
+        return "agent"
+    
+    return END
+```
+要点解説<br>
+①step_count >= MAX_STEPS→END(強制終了)<br>
+②最終メッセージがAIでtool_callsを持つ→"tools"(ツール実行へ)<br>
+③最終メッセージがToolMessage → "compose"(結果整形へ)<br>
+④search_count >= MIN_SEARCHES かつ satisfied → END(必要件数を満たして満足なら終了)<br>
+⑤search_count < MIN_SEARCHES かつ satisfied → "agent"(検索不足なので追加検索を促す)<br>
+⑥それ以外→END(終了)<br>
+<br>
+この関数は、状態に応じて次にどのノードへ遷移するかを明示的に決める。例えば、state["step_count"]が上限に達していればENDを返して終了する。`last_message.tool_calls`があれば"tools"を返してツールノードへ、`last_message`がToolMessageなら"compose"へ遷移する。さらに`search_count` >= `MIN_SEARCHES`かつsatisfiedのときはENDで終了し`search_count` < `MIN_SEARCHES`かつsatisfiedのときは不足分を埋めるために再び"agent"へ戻す。
+
+---
+
+### 実装
+[`langgraph_search.py`](chapter7/src/langgraph_search.py)<br>
+
+### ソースコードの解説
+#### (1)状態の型定義(AgentState)
+```python:
+class AgentState(TypedDict):
+    messages: Annotated[List[BaseMessage], operator.add]
+    step_count: int
+    search_count: int
+    satisfied: bool
+    findings: List[str]
+```
+**型定義の恩恵**
+- IDEの補完：IDE(統合開発環境)でstate["messages"]と打つと補完が効き、タイプミスによるバグを防げる。
+- 明示的な構造：messages、step_count、satisfied、findingsといった要素が一目瞭然
+- リストの累積：Annotated[List[...],operator.add]により、複数のノードが同じリストに追加していく動作を定義
+
+**注意点**
+型定義があっても初期化を忘れると参照エラーが発生する。`step_count:0`や`satisfied:False`のデフォルト値を明示的に設定しないと、`should_continue`内で`state["step_count"]`を参照したときにエラーになる。また、`messages`にはHumanMessage、AIMessage、ToolMessageという異なる方が混在するため、処理時には`isinstance()`で肩を確認する必要がある。
+
+#### (2)ノードの実装(agent_node、tools、compose_node)
+各ノードは`AgentState`を受け取り、新しいAgentStateを返す関数。
+```python:
+def agent_node(state: AgentState) -> AgentState:
+    llm = ChatOpenAI(model="gpt-5-nano", temperatre=0.3)
+    llm = llm.bind_tols([create_search_tool()])
+    response = llm.invoke(state["messages"])
+    # 新しい状態を構築して返す
+```
+`bind_tools`を忘れるとツール呼び出しに失敗するため、LLMにツール情報を渡す明示的な指定が必須。
+
+#### (3)グラフ構造の構築
+```python:
+    # エージェントノードからの条件付き遷移
+    graph.add_conditional_edges(
+        "agent",  # ① 起点ノード
+        should_continue,  # ② 判定関数
+        {
+            "tools": "tools",
+            "compose": "compose",
+            "agent": "agent",
+            END: END,
+        },
+    )
+
+    # 固定の遷移パス
+    graph.add_edge("tools", "compose")  # ③ ツール実行 → 結果処理
+    graph.add_edge("compose", "agent")  # ④ 結果処理 → 次の思考
+```
+**要点解説**<br>
+①agentノードからの条件付き遷移を定義<br>
+②should_continue関数で次の遷移先を決定<br>
+③tools→composeは必ず遷移(ツール結果の処理)<br>
+④compose→agentは必ず遷移(次の思考へ)<br>
+<br>
+`StateGraph`でAgent→Tools→Composeの循環を設計し、`should_continue`が停止条件を一元管理する。
+
+**グラフ構造の可視化**<br>
+LangGraphには構築したグラフ構造を可視化する構造が組み込まれている。`get_graph().draw_mermaid()`を使うと、Mermaid形式でグラフを出力できる。
+
+#### 実行結果
+```
+=== LangGraph による検索・要約 Agent ===
+
+質問: 2026年の生成 AI 業界の主要な動向を3つ教えてください
+============================================================
+
+[Agent] Step 1/5
+[Control] LLM がツール呼び出しを要求 → tools ノードへ遷移
+[Compose] 新しい情報を追加 (計 3 件)
+[Compose] 検索実行 (1回目) クエリ: 2026年 生成AI 業界 動向
+
+[Agent] Step 2/5
+[Agent] ツール不要と判断。タスク完了
+[Control] 検索1/3回、最低回数未達 → 追加検索を要求
+
+[Agent] Step 3/5
+[Control] LLM がツール呼び出しを要求 → tools ノードへ遷移
+[Compose] 新しい情報を追加 (計 6 件)
+[Compose] 検索実行 (2回目) クエリ: 2026における生成AIの主要なトレンド
+
+[Agent] Step 4/5
+[Control] LLM がツール呼び出しを要求 → tools ノードへ遷移
+[Compose] 新しい情報を追加 (計 9 件)
+[Compose] 検索実行 (3回目) クエリ: 2026 generative AI industry projections
+
+[Agent] Step 5/5
+[Agent] ツール不要と判断。タスク完了
+[Control] ステップ数上限（5）に到達 → 終了
+
+============================================================
+最終回答:
+
+Final Answer:
+- **多様な自動化とハイパーパーソナライゼーション**: 2026年には、生成AIが個別のデータに基づくメッセージの自動化やA/Bテストを進化させ、企業のマーケティング戦略において先進的な役割を果たします。このトレンドにより、広告運用のエージェント化やマルチモーダルコンテンツの生成が促進されます。(出典: https://forbesjapan.com/articles/detail/84643)
+- **生成AI市場の成長**: 2026年の生成AI市場は296.3億ドルと評価され、2033年までに3246.8億ドルに成長する見込みです。特に、北米が市場の中心となり、様々な産業での統合と利用が進展しています。(出典: https://www.grandviewresearch.com/industry-analysis/generative-ai-market-report)
+- **倫理と規制の強化**: AIの倫理的使用が重視され、透明性と説明責任が求められるようになります。特にEUでは、AIに関する包括的な規制が施行され、企業はコンプライアンスを意識した運用が求められるようになります。(出典: https://forbesjapan.com/articles/detail/85285)
+
+収集した情報数: 9
+実行ステップ数: 5
+
+[Summary] steps=5 tool_calls=3 sources=9 satisfied=True
+```
