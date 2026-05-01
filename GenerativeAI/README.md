@@ -1436,3 +1436,193 @@ Final Answer:
 
 [Summary] steps=5 tool_calls=3 sources=9 satisfied=True
 ```
+
+## RAGとの融合～社内データ優先の情報収集エージェント～
+#### (1)4つのツールによる多様な情報源
+4つのツール（corp_search, web_search, fetch_page, github_search_issues）を用意し、LLMが質問内容を解析して最適なツールを自動的に選択する。キーワード判定や閾値による強制的な分岐は行わず、<b>システムプロンプトでツール選択のガイドラインを提示することで、エージェントとしての判断力を引き出す</b>。これにより、「社内規定の質問」も「技術情報の質問」も、それぞれ適切なツールで処理できる。
+
+#### (2)信頼度による段階的検索
+社内ベクトル検索（corp_search）で得られた情報の「信頼度」（RAG検索のマッチ度合いを０～１で数値化したもの）が0.75以上なら社内情報だけで完結し、満たない場合のみ外部ツール（web_search, github_search_issue 等）を探しにいく。信頼度はベクトル検索で得られた各チャンクのコサイン類似度スコアから計算される。この段階的なアプローチにより、コストと品質のバランスを取る。
+
+#### (3)情報統合のフィードバックループ
+複数ツールの結果はComposeノードで統合され、情報が充足していなければAgentに戻ってさらに調査する。このループにより、質問に対する十分な根拠が揃うまで探索を続ける。
+
+---
+
+### 実装
+[`rag_agent.py`](chapter7/src/rag_agent.py)
+
+---
+### ソースコード解説
+#### (1)システムプロンプト～LLMへのツール選択ガイド～
+```python:
+SYSTEM_PROMPT = """
+あなたは社内ナレッジを最優先で活用する調査エージェントです。
+
+## ツール選択のガイドライン
+
+1. **まず社内データを確認**: corp_search で社内データを検索してください
+   - 検索結果には similarity（類似度、0〜1）が含まれます
+   - similarity が 0.75 以上なら信頼できる情報です
+
+2. **情報が不十分な場合の補完**:
+   - 社内データの similarity が低い、またはヒットしない場合は追加検索を検討してください
+   - 一般的な業界動向・規制情報: web_search を使用
+   - 技術的な情報（ライブラリ、フレームワーク、Issue、PR等）: github_search_issues を使用
+   - URLの詳細な内容が必要な場合: fetch_page を使用
+
+3. **検索結果の活用**:
+   - GitHub検索結果がある場合は、その Issue/PR のタイトルと内容を必ず具体的に引用してください
+   - Web検索・GitHub検索で取得した技術的情報は、詳細まで含めて回答に反映してください
+   - 「公式ドキュメントを確認してください」のような一般的な回答は避け、取得した具体的な情報を提示してください
+
+4. **最終回答**: 十分な情報が集まったら、各段落の末尾に出典URLまたは出典ファイル名を括弧付きで明記し、『Final Answer:』で回答を開始してください
+
+重要: ツールは必要に応じて複数回、組み合わせて使用できます。
+```
+このシステムプロンプトにより、LLMは「社内データのsimilarityを見て、低ければweb_searchやgithub_search_issuesを使う」という判断を自律的に行う。
+
+#### (2)State定義～信頼度の追加～
+```python:
+class RAGAgentState(TypedDict):
+    messages: Annotated[List[BaseMessage], operator.add]
+    step_count: int
+    tool_call_count: int
+    satisfied: bool
+    corp_findings: List[Dict[str, str]]
+    web_findings: List[Dict[str, str]]
+    confidence: float
+    query: str
+```
+`confidence`はシャイないデータをベクトル検索したときのスコアを信頼度とし、0.75以上なら十分信頼できると判断、未満ならWeb検索の補完が必要と判定する。
+
+#### (3)信頼度の計算(corp_searchツール)
+社内ベクトル検索の結果から、最大類似度を信頼度として算出する。信頼度が高い情報が1つでもあればそれで十分という判断をしている。
+```python:
+@tool
+def corp_search(query: str, top_k: int = 3) -> str:
+    """社内データを検索し、JSON 文字列を返す"""
+    # RAG初期化（初回のみChromaインデックス構築）
+    initialize_rag()
+    assert vector_store is not None
+
+    # ベクトル検索で類似チャンクを取得（距離スコア付き）
+    results = vector_store.similarity_search_with_score(query, k=top_k)
+
+    # 距離→類似度変換して結果を整形
+    processed = []
+    for doc, score in results:
+        similarity = 1 / (1 + float(score))  # 距離→類似度変換
+        processed.append(
+            {
+                "content": doc.page_content,
+                "source": doc.metadata.get("source", "不明"),
+                "page": doc.metadata.get("page") or doc.metadata.get("sheet", ""),
+                "similarity": similarity,  # 0.0〜1.0の値
+            }
+        )
+
+    print(f"[Tool:CorpSearch] {len(processed)} 件の結果")
+    return json.dumps(processed, ensure_ascii=False)
+```
+ツール実行後、その結果を`process`ノードで処理し、信頼度をstateに反映する。
+<br>
+```python:
+    # corp_searchツールの結果を処理：信頼度を計算してstateに反映
+    if tool_name == "corp_search":
+        try:
+            results = json.loads(content)
+        except json.JSONDecodeError:
+            results = []
+        new_state["corp_findings"] = results
+        if results:
+            # 複数チャンクの中で最大類似度を信頼度とする
+            best = max(result.get("similarity", 0.0) for result in results)
+            new_state["confidence"] = best
+            print(f"[Process] 社内データ信頼度を更新: {best:.2f}")
+            # ToolMessageを短縮して履歴の肥大化を防ぐ
+            try:
+                summary = f"社内検索: {len(results)}件ヒット（信頼度: {best:.2f}）"
+                new_state["messages"][-1] = ToolMessage(
+                    content=summary,
+                    name="corp_search",
+                    tool_call_id=getattr(last_message, "tool_call_id", None),
+                )
+            except Exception:
+                pass
+```
+ベクトル検索で得られた複数チャンクの中で、最も高い類似度を信頼度とする。距離スコアは`1/(1 + distance)`で類似度に変換される。
+
+#### (4)agent_node～LLMに判断を委ねる～
+`agent_node`は、社内・外部ツールをLLMにバインドし、次のアクションを決めてもらう点は同じだが、以下の制御を追加している。
+- 信頼度が0.85以上のステップでは、web_search/github_search_issues/fetch_pageを自動的に呼ばず、社内情報を優先する
+- ツール呼び出しの無駄を省くため、同じ内容の呼び出しはまとめて1回だけにし、回数も制限（web_searchは1回／ステップ、fetch_pageは2回／ステップ）
+- 直近のHuman以降の履歴だけを残して簡潔にし、corp_findings/web_findingsを要約したサマリーをLLMに渡して判断しやすくしている。
+
+#### (5)制御フロー(should_continue)
+```python:
+def should_continue(state: RAGAgentState) -> Literal["tools", "process", END]:
+    # 1. ステップ数上限チェック：暴走防止
+    if state["step_count"] >= MAX_STEPS:  # ①
+        print("[Control] ステップ上限に達しました")
+        return END
+
+    # 2. 満足フラグチェック：agent_nodeで信頼度判定を行い、終了と判断されたか
+    if state["satisfied"]:  # ②
+        print("[Control] エージェント完了")
+        return END
+
+    # 3. 最後のメッセージの種類で次の遷移先を決定
+    last_message = state["messages"][-1]
+    if isinstance(last_message, AIMessage) and last_message.tool_calls:  # ③
+        # LLMがツール呼び出しを指示 → toolsノードへ
+        print("[Control] ツールノードへ")
+        return "tools"
+    if isinstance(last_message, ToolMessage):  # ④
+        # ツール実行結果が返ってきた → processノードへ（結果を解釈）
+        print("[Control] 結果処理へ")
+        return "process"
+
+    # 4. どれにも当てはまらない場合は終了
+    return END  # ⑤
+```
+①上限で強制終了(暴走防止)<br>
+②LLMが満足フラグを立てたら終了<br>
+③LLMがツール要求ならtools<br>
+④ツール結果が来たらprocessへ（結果を解釈）<br>
+⑤どれにも当てはまらない場合は終了
+
+## ベストプラクティス&ガードレール
+### 「暴走させない」ステップ上限とタイムアウト
+- 最大ステップ数と最大実行時間を決め、閾値を超えたら強制終了する。
+- エラー回数をカウントし、同じ失敗を繰り返す場合は停止する。
+- これらの閾値は「本番」「検証」で別々に設定し、状況に応じて調整する。
+
+---
+
+### 「予算を意識する」コストガード
+エージェントは自動でAPIを叩くため、気づけば1回の問い合わせで膨大なコストが発生することもある。特にgpt-5系を利用する場合は、トークン数に応じた料金が積みあがる。<br>
+**コストを抑えるポイント**
+- リクエストごとに概算コストを算出し、上限を超えたら早めに中断する。
+- 高価なモデルを使う処理を分離し、安価なモデル（もしくはローカル推論）に切り替えられないか検討する。
+- 月次・日次の予算ラインをダッシュボード化し、アラートを受け取れるようにする。
+<br><br>
+
+**コンテキスト長の管理**
+<br>
+
+複数回の検索を繰り返すと、検索結果が累積してコンテキスト長の上限を超えることがある。例えば以下の対策がある。
+- メッセージ履歴の制限：最新のHumanMessage以降のみをLLMに送信
+- 検索結果の短縮：各結果を最大2件、内容を100文字に制限
+
+これにより、エージェントが長時間実行されてもコンテキスト長超過エラーを防げる。
+
+---
+
+### 「何でもさせない」権限分離とサンドボックス
+エージェントに与えるツールは「権限」である。<b>誤って危険な操作を許してしまうと、運用開始直後にシステムを壊すこともあり得る。</b>
+- ツールを読み取り専用（検索、参照）と書き込み系（ファイル更新、メール送信）に分け、段階的に開放する。
+- 破壊的操作は必ずレビュー(人間の承認)を挟む仕組みにする。
+- 可能であればDockerなどの隔離環境で実行し、本番データには直接触れさせない。
+
+エージェント開発は作って終わりではなく、<b>「止める」「計測する」「改善する」という地道な運用があってこそ価値を発揮する。</b>
