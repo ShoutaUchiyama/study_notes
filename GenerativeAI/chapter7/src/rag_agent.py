@@ -32,6 +32,16 @@ ROOT = Path(__file__).resolve().parent
 OUTPUT_DIR = ROOT / "outputs"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+
+def configure_stdio_utf8() -> None:
+    """Windows の既定コンソール(cp932 等)で Unicode を print すると落ちるのを避ける。"""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
 # LangGraph の 1 ステップは「LLM 思考 + ツール実行」で2～3カウント進むため、
 # 社内+Web+GitHub を行き来する調査でも余裕があるよう 15 ステップ確保しておく。
 MAX_STEPS = 15
@@ -806,6 +816,7 @@ def ensure_final_answer(state: RAGAgentState) -> tuple[RAGAgentState, Optional[s
 
 
 def run(query: str) -> None:
+    configure_stdio_utf8()
     state: RAGAgentState = {
         "messages": [
             SystemMessage(content=SYSTEM_PROMPT),
@@ -853,6 +864,7 @@ def run(query: str) -> None:
 
 
 def main() -> None:
+    configure_stdio_utf8()
     if check_gh_auth():
         print("[✓] GitHub連携: 有効")
     else:
